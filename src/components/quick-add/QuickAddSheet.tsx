@@ -34,7 +34,6 @@ export function QuickAddSheet({ ref }: { ref?: Ref<QuickAddHandle> }) {
   const [draft, setDraft] = useState<ExpenseDraft>(() => createDraft(settings, categories, today));
   const [errors, setErrors] = useState<DraftErrors>({});
   const [saving, setSaving] = useState(false);
-  const [openCount, setOpenCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -49,16 +48,12 @@ export function QuickAddSheet({ ref }: { ref?: Ref<QuickAddHandle> }) {
         setEditing(null);
         setDraft(createDraft(settings, categories, today));
         setErrors({});
-        setOpen(true);
-        setOpenCount((n) => n + 1);
-      },
+        setOpen(true);      },
       openEdit(expense: Expense) {
         setEditing(expense);
         setDraft(draftFromExpense(expense));
         setErrors({});
-        setOpen(true);
-        setOpenCount((n) => n + 1);
-      },
+        setOpen(true);      },
     }),
     [settings, categories, today],
   );
@@ -193,7 +188,6 @@ export function QuickAddSheet({ ref }: { ref?: Ref<QuickAddHandle> }) {
           categories={categories}
           value={draft.categoryId}
           onChange={(categoryId) => update({ categoryId })}
-          resetKey={openCount}
           error={errors.category}
         />
 
