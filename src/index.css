@@ -141,6 +141,23 @@
     filter: invert(1);
   }
 
+  /* iOS le da al campo de fecha un ancho mínimo propio que desborda filas y grillas. */
+  input[type='date'] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    input[type='date'] {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type='date']::-webkit-date-and-time-value {
+      text-align: left;
+    }
+  }
+
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-indigo-500;
   }

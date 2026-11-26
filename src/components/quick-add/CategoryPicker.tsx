@@ -16,8 +16,14 @@ export function CategoryPicker({ categories, value, onChange, resetKey, error }:
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const selected = containerRef.current?.querySelector<HTMLElement>('[aria-checked="true"]');
-    selected?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const container = containerRef.current;
+    const selected = container?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!container || !selected) return;
+    // Se desplaza solo la tira de categorías. scrollIntoView movía también el panel entero
+    // y en iPhone lo dejaba corrido de costado.
+    const box = container.getBoundingClientRect();
+    const item = selected.getBoundingClientRect();
+    container.scrollLeft += item.left - box.left - (box.width - item.width) / 2;
   }, [resetKey]);
 
   return (

@@ -52,8 +52,14 @@ export function createDefaultRates(now: string): ExchangeRate[] {
     { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1450, isDefault: true, autoSource: 'usd-oficial', updatedAt: now },
     { id: 'usd-mep', currency: 'USD', label: 'MEP', arsPerUnit: 1480, isDefault: false, autoSource: 'usd-mep', updatedAt: now },
     { id: 'usd-tarjeta', currency: 'USD', label: 'Tarjeta', arsPerUnit: 1885, isDefault: false, autoSource: 'usd-tarjeta', updatedAt: now },
+    createBlueRate(now),
     { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, autoSource: 'eur-oficial', updatedAt: now },
   ];
+}
+
+/** Dólar blue en vivo (desde el esquema v3). El valor inicial se reemplaza por el de hoy en la primera consulta. */
+export function createBlueRate(now: string): ExchangeRate {
+  return { id: 'usd-blue', currency: 'USD', label: 'Blue', arsPerUnit: 1710, isDefault: false, autoSource: 'usd-blue', updatedAt: now };
 }
 
 export function createDefaultSettings(now: string): Settings {

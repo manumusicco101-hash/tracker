@@ -120,6 +120,8 @@ describe('migración v1 → v2 (cotizaciones en vivo)', () => {
     const v1 = JSON.parse(JSON.stringify(content)) as {
       settings: { rates: Array<Record<string, unknown>>; quotes?: unknown; quickAdd: Record<string, unknown> };
     };
+    // La v1 no traía el dólar blue de fábrica.
+    v1.settings.rates = v1.settings.rates.filter((rate) => rate.id !== 'usd-blue');
     for (const rate of v1.settings.rates) delete rate.autoSource;
     delete v1.settings.quotes;
     delete v1.settings.quickAdd.openOnLaunch;
@@ -133,6 +135,7 @@ describe('migración v1 → v2 (cotizaciones en vivo)', () => {
     const auto = migrated.settings.rates.filter((r) => r.autoSource).map((r) => [r.id, r.autoSource]);
     expect(auto.sort()).toEqual([
       ['eur-oficial', 'eur-oficial'],
+      ['usd-blue', 'usd-blue'],
       ['usd-mep', 'usd-mep'],
       ['usd-oficial', 'usd-oficial'],
       ['usd-tarjeta', 'usd-tarjeta'],
@@ -171,5 +174,44 @@ describe('migración v1 → v2 (cotizaciones en vivo)', () => {
     const roundTrip = parseBackup(serializeBackup(file));
     expect(roundTrip.data.settings.quotes).toEqual({ autoUpdate: false, lastSyncAt: '2026-11-25T15:00:00.000Z', provider: 'bluelytics' });
     expect(roundTrip.data.settings.quickAdd.openOnLaunch).toBe(true);
+  });
+});
+
+describe('migración v2 → v3 (dólar blue)', () => {
+  /** Datos como los guardaba la v2: sin el dólar blue de fábrica. */
+  function makeV2(extra?: Record<string, unknown>) {
+    const { schemaVersion: _v, ...content } = createInitialData(today);
+    const v2 = JSON.parse(JSON.stringify(content)) as { settings: { rates: Array<Record<string, unknown>> } };
+    v2.settings.rates = v2.settings.rates.filter((rate) => rate.id !== 'usd-blue');
+    if (extra) v2.settings.rates.push(extra);
+    return { ...v2, schemaVersion: 2 };
+  }
+
+  it('suma el dólar blue en vivo, sin cambiar la cotización por defecto', () => {
+    const migrated = migrate(makeV2());
+    const blue = migrated.settings.rates.filter((r) => r.autoSource === 'usd-blue');
+    expect(blue).toHaveLength(1);
+    expect(blue[0]).toMatchObject({ id: 'usd-blue', currency: 'USD', label: 'Blue', isDefault: false });
+    expect(migrated.settings.rates.filter((r) => r.currency === 'USD' && r.isDefault).map((r) => r.id)).toEqual(['usd-oficial']);
+  });
+
+  it('si ya había una cotización "Blue" manual, la pone en vivo en vez de duplicarla', () => {
+    const migrated = migrate(
+      makeV2({ id: 'mi-blue', currency: 'USD', label: ' blue ', arsPerUnit: 1700, isDefault: false, autoSource: null, updatedAt: '2026-11-01T12:00:00.000Z' }),
+    );
+    const blue = migrated.settings.rates.filter((r) => r.label.trim().toLowerCase() === 'blue');
+    expect(blue.map((r) => [r.id, r.autoSource, r.arsPerUnit])).toEqual([['mi-blue', 'usd-blue', 1700]]);
+  });
+
+  it('si ya seguía el blue en vivo con otro nombre, no agrega otra', () => {
+    const migrated = migrate(
+      makeV2({ id: 'paralelo', currency: 'USD', label: 'Paralelo', arsPerUnit: 1700, isDefault: false, autoSource: 'usd-blue', updatedAt: '2026-11-01T12:00:00.000Z' }),
+    );
+    expect(migrated.settings.rates.filter((r) => r.autoSource === 'usd-blue').map((r) => r.id)).toEqual(['paralelo']);
+  });
+
+  it('una instalación nueva ya trae el blue en vivo', () => {
+    const fresh = createInitialData(today);
+    expect(fresh.settings.rates.find((r) => r.id === 'usd-blue')?.autoSource).toBe('usd-blue');
   });
 });

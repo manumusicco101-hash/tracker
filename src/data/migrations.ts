@@ -1,8 +1,9 @@
 import type { AppData } from '../types';
+import { createBlueRate } from './defaults';
 import { validateContent, ValidationError } from './validation';
 
 /** Versión actual del esquema. Subirla junto con una migración en MIGRATIONS. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 type Obj = Record<string, unknown>;
 
@@ -38,6 +39,25 @@ const MIGRATIONS: Record<number, (data: Obj) => Obj> = {
         quotes: { autoUpdate: true, lastSyncAt: null, provider: null },
       },
     };
+  },
+
+  // v2 → v3: se suma el dólar blue en vivo. Si ya había una cotización "Blue" manual, pasa a en vivo (no se duplica).
+  2: (data) => {
+    const settings = isRecord(data.settings) ? data.settings : {};
+    if (!Array.isArray(settings.rates)) return { ...data, schemaVersion: 3 };
+    const rates: unknown[] = settings.rates;
+    const followsBlue = rates.some((r) => isRecord(r) && (r.autoSource === 'usd-blue' || r.id === 'usd-blue'));
+    let nextRates = rates;
+    if (!followsBlue) {
+      const labeled = rates.findIndex(
+        (r) => isRecord(r) && r.currency === 'USD' && typeof r.label === 'string' && r.label.trim().toLowerCase() === 'blue',
+      );
+      nextRates =
+        labeled >= 0
+          ? rates.map((r, i) => (i === labeled && isRecord(r) ? { ...r, autoSource: 'usd-blue' } : r))
+          : [...rates, createBlueRate(new Date().toISOString())];
+    }
+    return { ...data, schemaVersion: 3, settings: { ...settings, rates: nextRates } };
   },
 };
 

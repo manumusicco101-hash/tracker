@@ -60,7 +60,10 @@ export function BottomSheet({
     if (open) {
       setMounted(true);
       // Un panel que queda montado (Quick Add) vuelve a abrir desde arriba.
-      if (bodyRef.current) bodyRef.current.scrollTop = 0;
+      if (bodyRef.current) {
+        bodyRef.current.scrollTop = 0;
+        bodyRef.current.scrollLeft = 0;
+      }
       let second = 0;
       const first = requestAnimationFrame(() => {
         second = requestAnimationFrame(() => setShown(true));
@@ -157,7 +160,7 @@ export function BottomSheet({
             <div className="flex min-w-11 shrink-0 justify-end">{headerAction}</div>
           </div>
         </div>
-        <div ref={bodyRef} className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 ${bodyClassName}`}>
+        <div ref={bodyRef} className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-4 ${bodyClassName}`}>
           {children}
         </div>
         {footer && (
