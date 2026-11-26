@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Gastos</title>
+    <meta name="description" content="Registro rápido de gastos diarios con cuotas, recurrentes y varias monedas." />
+    <meta name="theme-color" content="#f4f4f5" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Gastos" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <script>
+      // Aplica el tema antes del primer render para evitar el parpadeo claro/oscuro.
+      (function () {
+        try {
+          var pref = localStorage.getItem('gastos-tracker:theme') || 'system';
+          var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#09090b');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>Esta app necesita JavaScript para funcionar.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

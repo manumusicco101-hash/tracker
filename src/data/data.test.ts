@@ -1,0 +1,114 @@
+import { describe, expect, it } from 'vitest';
+import { expandOccurrences } from '../lib/occurrences';
+import { createBackup, parseBackup, serializeBackup, summarizeBackup } from './backup';
+import { OTHER_CATEGORY_ID } from './defaults';
+import { createLocalRepositories, STORAGE_KEY } from './localRepositories';
+import { migrate, SCHEMA_VERSION } from './migrations';
+import { createInitialData } from './seed';
+import { MemoryStore } from './storage';
+
+const today = '2026-11-25';
+const fresh = () => {
+  const store = new MemoryStore();
+  return { store, repos: createLocalRepositories(store, true, () => createInitialData(today, '2026-11-25T12:00:00.000Z')) };
+};
+
+describe('datos de ejemplo', () => {
+  it('genera 15–20 gastos de los últimos 10 días con los casos pedidos', () => {
+    const { expenses } = createInitialData(today);
+    expect(expenses.length).toBeGreaterThanOrEqual(15);
+    expect(expenses.length).toBeLessThanOrEqual(20);
+    expect(expenses.every((e) => e.isSample)).toBe(true);
+    expect(expenses.every((e) => e.date <= today && e.date >= '2026-11-15')).toBe(true);
+    expect(expenses.filter((e) => e.currency !== 'ARS').length).toBeGreaterThanOrEqual(2);
+    expect(expenses.filter((e) => e.kind === 'recurring')).toHaveLength(2);
+    expect(expenses.filter((e) => e.kind === 'installments')).toHaveLength(2);
+  });
+
+  it('las ocurrencias de ejemplo se pueden calcular', () => {
+    const data = createInitialData(today);
+    expect(expandOccurrences(data.expenses, '2026-11-01', '2027-12-31', data.settings).length).toBeGreaterThan(18);
+  });
+});
+
+describe('repositorios locales', () => {
+  it('siembra en el primer uso y persiste en una sola clave', async () => {
+    const { store, repos } = fresh();
+    expect(await repos.expenses.list()).toHaveLength(18);
+    const stored = JSON.parse(store.getItem(STORAGE_KEY) ?? '{}');
+    expect(stored.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
+  it('crea, actualiza, elimina y restaura', async () => {
+    const { repos } = fresh();
+    const created = await repos.expenses.create({
+      kind: 'single',
+      amountCents: 1000,
+      currency: 'ARS',
+      rateAtCreation: { ARS: 1, USD: 1450, EUR: 1700 },
+      categoryId: 'ocio',
+      paymentMethod: 'cash',
+      date: today,
+    });
+    const updated = await repos.expenses.update(created.id, { ...created, kind: 'single', amountCents: 2000 });
+    expect(updated.createdAt).toBe(created.createdAt);
+    expect(updated.amountCents).toBe(2000);
+    const removed = await repos.expenses.remove(created.id);
+    expect(removed?.id).toBe(created.id);
+    await repos.expenses.restore(removed!);
+    expect((await repos.expenses.list()).some((e) => e.id === created.id)).toBe(true);
+  });
+
+  it('"Borrar datos de ejemplo" elimina solo isSample', async () => {
+    const { repos } = fresh();
+    await repos.expenses.create({
+      kind: 'single',
+      amountCents: 1000,
+      currency: 'ARS',
+      rateAtCreation: { ARS: 1, USD: 1450, EUR: 1700 },
+      categoryId: 'ocio',
+      paymentMethod: 'cash',
+      date: today,
+    });
+    expect(await repos.expenses.removeSamples()).toBe(18);
+    expect(await repos.expenses.list()).toHaveLength(1);
+  });
+
+  it('eliminar una categoría exige reasignar sus gastos y "Otros" no se borra', async () => {
+    const { repos } = fresh();
+    await expect(repos.categories.remove('ocio')).rejects.toThrow();
+    const moved = await repos.expenses.reassignCategory('ocio', OTHER_CATEGORY_ID);
+    expect(moved).toBe(3);
+    await repos.categories.remove('ocio');
+    expect((await repos.categories.list()).some((c) => c.id === 'ocio')).toBe(false);
+    await expect(repos.categories.remove(OTHER_CATEGORY_ID)).rejects.toThrow();
+  });
+});
+
+describe('backup', () => {
+  it('exporta e importa sin perder datos', async () => {
+    const { repos } = fresh();
+    const file = await repos.backup.exportAll();
+    const parsed = parseBackup(serializeBackup(file));
+    expect(parsed.data).toEqual(file.data);
+    expect(summarizeBackup(parsed).expenses).toBe(18);
+  });
+
+  it('rechaza archivos inválidos o de una versión más nueva', () => {
+    expect(() => parseBackup('no es json')).toThrow('JSON');
+    expect(() => parseBackup('{"app":"otra"}')).toThrow('backup');
+    const data = createInitialData(today);
+    const { schemaVersion: _v, ...content } = data;
+    const newer = { ...createBackup(content), schemaVersion: SCHEMA_VERSION + 1 };
+    expect(() => parseBackup(JSON.stringify(newer))).toThrow('más nueva');
+    const broken = createBackup(content);
+    (broken.data.expenses[0] as { amountCents: unknown }).amountCents = 'mucho';
+    expect(() => parseBackup(JSON.stringify(broken))).toThrow('amountCents');
+  });
+
+  it('repara gastos con categorías inexistentes', () => {
+    const data = createInitialData(today);
+    data.expenses[0].categoryId = 'no-existe';
+    expect(migrate(data).expenses[0].categoryId).toBe(OTHER_CATEGORY_ID);
+  });
+});
