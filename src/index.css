@@ -3,10 +3,27 @@
 /* Modo oscuro por clase (.dark en <html>), controlado por Ajustes → Apariencia. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Skin zxc (Apple HIG / Liquid Glass). Solo capa visual: la lógica no cambia.
+ * El índigo de Tailwind se redefine en azul Apple, así que todas las clases
+ * indigo-* (botones, chips, navegación, focus) cambian sin tocar componentes.
+ */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, ui-sans-serif, system-ui, sans-serif;
   --animate-fade-in: fade-in 180ms ease-out;
   --animate-pop-in: pop-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  --color-indigo-50: #eef6ff;
+  --color-indigo-100: #dcecff;
+  --color-indigo-200: #b8dafe;
+  --color-indigo-300: #85c0ff;
+  --color-indigo-400: #409cff;
+  --color-indigo-500: #0a84ff;
+  --color-indigo-600: #0071e3;
+  --color-indigo-700: #0062c4;
+  --color-indigo-800: #00509e;
+  --color-indigo-900: #003f7d;
+  --color-indigo-950: #002a55;
 
   @keyframes fade-in {
     from {
@@ -30,6 +47,42 @@
 }
 
 @layer base {
+  /* Tokens del skin: claro por defecto, oscuro con la clase .dark. */
+  :root {
+    --skin-bg: #f5f5f7;
+    --skin-primary: #0071e3;
+    --skin-card: #ffffff;
+    --skin-card-face: linear-gradient(180deg, #ffffff 0%, #ebebef 55%, #e4e4ea 100%);
+    --skin-card-stroke: rgba(0, 0, 0, 0.1);
+    --skin-elev-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 10px rgba(15, 23, 42, 0.07), 0 12px 28px -6px rgba(15, 23, 42, 0.14);
+    --skin-glass-bg-strong: rgba(255, 255, 255, 0.36);
+    --skin-glass-shadow: 0 1px 0 color-mix(in srgb, #ffffff 45%, transparent) inset, 0 10px 32px color-mix(in srgb, #1d1d1f 10%, transparent);
+    --skin-input-fill: rgba(0, 0, 0, 0.055);
+    --skin-input-inset: inset 0 1px 3px rgba(0, 0, 0, 0.14), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    --skin-scrollbar: rgba(0, 0, 0, 0.15);
+    --skin-mesh-1: rgba(0, 113, 227, 0.22);
+    --skin-mesh-2: rgba(175, 82, 222, 0.12);
+    --skin-mesh-3: rgba(52, 199, 89, 0.14);
+    --skin-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html.dark {
+    --skin-bg: #000000;
+    --skin-primary: #0a84ff;
+    --skin-card: #1c1c1e;
+    --skin-card-face: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 45%, #1c1c1e 100%);
+    --skin-card-stroke: rgba(255, 255, 255, 0.18);
+    --skin-elev-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 6px 14px -2px rgba(0, 0, 0, 0.45), 0 18px 40px -8px rgba(0, 0, 0, 0.55);
+    --skin-glass-bg-strong: rgba(28, 28, 30, 0.42);
+    --skin-glass-shadow: 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent) inset, 0 14px 40px rgba(0, 0, 0, 0.5);
+    --skin-input-fill: rgba(255, 255, 255, 0.08);
+    --skin-input-inset: inset 0 1px 3px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --skin-scrollbar: rgba(255, 255, 255, 0.18);
+    --skin-mesh-1: rgba(10, 132, 255, 0.3);
+    --skin-mesh-2: rgba(191, 90, 242, 0.16);
+    --skin-mesh-3: rgba(48, 209, 88, 0.12);
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
@@ -41,7 +94,42 @@
   }
 
   body {
-    @apply min-h-dvh bg-zinc-100 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+    @apply min-h-dvh font-sans text-zinc-900 antialiased dark:text-zinc-100;
+    background-color: var(--skin-bg);
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Manchas de color fijas detrás de todo: el vidrio las deja ver. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 90% 70% at 0% 10%, var(--skin-mesh-1), transparent 62%),
+      radial-gradient(ellipse 70% 50% at 8% 70%, var(--skin-mesh-2), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 92% 88%, var(--skin-mesh-3), transparent 58%);
+  }
+
+  /* Barras de scroll finas en todo el sitio. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--skin-scrollbar) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--skin-scrollbar);
+    border-radius: 999px;
   }
 
   /* Inputs nativos de fecha legibles en ambos temas. */
@@ -59,12 +147,24 @@
 }
 
 @layer components {
+  /* Tarjeta: degradé del skin, borde suave y elevación (no papel blanco plano). */
   .card {
-    @apply rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none;
+    @apply rounded-2xl;
+    background: var(--skin-card-face);
+    border: 1px solid var(--skin-card-stroke);
+    box-shadow: var(--skin-elev-1);
   }
 
+  /* Campo hundido: relleno translúcido y sombra interior, sin borde marcado. */
   .input {
-    @apply min-h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-100 dark:placeholder:text-zinc-500;
+    @apply min-h-11 w-full rounded-xl border border-transparent px-3 text-base text-zinc-900 placeholder:text-zinc-400 transition-colors focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500;
+    background: var(--skin-input-fill);
+    box-shadow: var(--skin-input-inset);
+  }
+
+  .input:focus {
+    border-color: var(--skin-primary);
+    box-shadow: var(--skin-input-inset), 0 0 0 3px color-mix(in srgb, var(--skin-primary) 22%, transparent);
   }
 
   .label {
@@ -77,6 +177,56 @@
 
   .muted {
     @apply text-zinc-500 dark:text-zinc-400;
+  }
+
+  /* Vidrio para barras fijas: navegación inferior y búsqueda pegada. */
+  .skin-glass {
+    background: var(--skin-glass-bg-strong);
+    box-shadow: var(--skin-glass-shadow);
+    -webkit-backdrop-filter: saturate(1.9) blur(32px);
+    backdrop-filter: saturate(1.9) blur(32px);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .skin-glass {
+      background: var(--skin-card);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Respuesta al tocar: se achica un poco mientras se presiona. */
+  .skin-press {
+    transition:
+      transform 100ms var(--skin-ease),
+      background-color 100ms var(--skin-ease),
+      color 100ms var(--skin-ease),
+      box-shadow 100ms var(--skin-ease),
+      border-color 100ms var(--skin-ease);
+  }
+
+  .skin-press:active {
+    transform: scale(0.97);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skin-press:active {
+      transform: none;
+      filter: brightness(0.96);
+    }
+  }
+
+  /* Botón principal con degradé y brillo arriba. */
+  .skin-btn-primary {
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in srgb, #ffffff 38%, var(--skin-primary)) 0%,
+      var(--skin-primary) 48%,
+      color-mix(in srgb, #000000 8%, var(--skin-primary)) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 1px 2px color-mix(in srgb, var(--skin-primary) 35%, transparent);
   }
 
   .no-scrollbar {

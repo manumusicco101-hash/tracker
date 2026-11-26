@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { mirrorThemePreference } from '../data/storage';
 import type { ThemePreference } from '../types';
 
-const THEME_COLORS = { light: '#f4f4f5', dark: '#09090b' };
+const THEME_COLORS = { light: '#f5f5f7', dark: '#000000' };
 
 /** Aplica el tema (clase .dark en <html>) y sigue la preferencia del sistema si corresponde. */
 export function useApplyTheme(preference: ThemePreference): void {

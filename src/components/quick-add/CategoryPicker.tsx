@@ -40,9 +40,9 @@ export function CategoryPicker({ categories, value, onChange, resetKey, error }:
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(c.id)}
-              className={`flex min-h-[4.5rem] snap-start flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 transition-colors ${
+              className={`skin-press flex min-h-[4.5rem] snap-start flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 ${
                 selected
-                  ? 'border-transparent bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-500/15 dark:text-indigo-300'
                   : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-300'
               }`}
             >

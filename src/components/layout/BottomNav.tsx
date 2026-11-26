@@ -18,7 +18,7 @@ export function BottomNav({ current, onNavigate }: BottomNavProps) {
   return (
     <nav
       aria-label="Secciones"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/80 bg-white/85 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/85"
+      className="skin-glass fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/80 dark:border-zinc-800"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="mx-auto grid h-16 max-w-2xl grid-cols-4">
@@ -30,7 +30,7 @@ export function BottomNav({ current, onNavigate }: BottomNavProps) {
                 type="button"
                 onClick={() => onNavigate(id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                className={`flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium skin-press ${
                   active ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                 }`}
               >

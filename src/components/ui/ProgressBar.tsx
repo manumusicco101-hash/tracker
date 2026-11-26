@@ -1,9 +1,9 @@
 import { budgetLevel, type BudgetLevel } from '../../lib/aggregations';
 
 const LEVEL_COLORS: Record<BudgetLevel, string> = {
-  ok: 'bg-emerald-500',
-  warning: 'bg-amber-400',
-  over: 'bg-rose-500',
+  ok: 'bg-linear-to-r from-emerald-400 to-emerald-500',
+  warning: 'bg-linear-to-r from-amber-300 to-amber-400',
+  over: 'bg-linear-to-r from-rose-400 to-rose-500',
 };
 
 export const LEVEL_TEXT: Record<BudgetLevel, string> = {

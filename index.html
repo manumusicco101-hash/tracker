@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Gastos</title>
     <meta name="description" content="Registro rápido de gastos diarios con cuotas, recurrentes y varias monedas." />
-    <meta name="theme-color" content="#f4f4f5" />
+    <meta name="theme-color" content="#f5f5f7" />
     <meta name="color-scheme" content="light dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -22,7 +22,7 @@
           var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) {
             document.documentElement.classList.add('dark');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#09090b');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#000000');
           }
         } catch (e) {}
       })();

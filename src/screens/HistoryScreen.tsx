@@ -93,7 +93,7 @@ export function HistoryScreen() {
         </Button>
       </header>
 
-      <div className="sticky top-0 z-20 -mx-4 space-y-2 bg-zinc-100/90 px-4 py-2 backdrop-blur-lg dark:bg-zinc-950/90" style={{ top: 'env(safe-area-inset-top)' }}>
+      <div className="sticky top-0 z-20 -mx-4 space-y-2 skin-glass px-4 py-2" style={{ top: 'env(safe-area-inset-top)' }}>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" aria-hidden />
