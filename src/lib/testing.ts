@@ -5,13 +5,14 @@ export function makeSettings(overrides: Partial<Settings> = {}): Settings {
   return {
     baseCurrency: 'ARS',
     rates: [
-      { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1450, isDefault: true, updatedAt: '2026-11-01T12:00:00.000Z' },
-      { id: 'usd-tarjeta', currency: 'USD', label: 'Tarjeta', arsPerUnit: 1885, isDefault: false, updatedAt: '2026-11-01T12:00:00.000Z' },
-      { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, updatedAt: '2026-11-01T12:00:00.000Z' },
+      { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1450, isDefault: true, autoSource: null, updatedAt: '2026-11-01T12:00:00.000Z' },
+      { id: 'usd-tarjeta', currency: 'USD', label: 'Tarjeta', arsPerUnit: 1885, isDefault: false, autoSource: null, updatedAt: '2026-11-01T12:00:00.000Z' },
+      { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, autoSource: null, updatedAt: '2026-11-01T12:00:00.000Z' },
     ],
     rateHistory: [],
     budget: { amountCents: 900_000_00, currency: 'ARS' },
-    quickAdd: { lastCategoryId: null, lastPaymentMethod: 'debit' },
+    quickAdd: { lastCategoryId: null, lastPaymentMethod: 'debit', openOnLaunch: false },
+    quotes: { autoUpdate: true, lastSyncAt: null, provider: null },
     theme: 'system',
     ...overrides,
   };

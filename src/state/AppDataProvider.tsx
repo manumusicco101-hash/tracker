@@ -1,16 +1,19 @@
 import { Database, RotateCcw } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../components/ui/Button';
 import { OTHER_CATEGORY_ID } from '../data/defaults';
 import { repositories } from '../data';
 import { requestPersistentStorage } from '../data/storage';
 import { currentRateTable, findRate } from '../lib/currency';
+import { nowTimestamp, todayISO } from '../lib/dates';
 import { toNewExpense } from '../lib/expenses';
+import { applyQuotes, type RateChange } from '../lib/quotes';
 import { deleteRate, rebaseExpenseRates, setDefaultRate, upsertRate, type RateInput } from '../lib/rates';
 import { planPriceChange } from '../lib/recurring';
+import { fetchQuotes } from '../services/quotesApi';
 import { useToday } from '../hooks/useToday';
 import { downloadTextFile, errorMessage } from '../utils/download';
-import type { BackupFile, Category, Expense, ISODate, NewCategory, NewExpense, PaymentMethod, Settings } from '../types';
+import type { BackupFile, Category, Expense, ISODate, NewCategory, NewExpense, PaymentMethod, QuoteProvider, Settings } from '../types';
 
 // Estado global de la app. Solo habla con `repositories` (la capa de persistencia):
 // ningún componente toca localStorage.
@@ -22,6 +25,20 @@ interface Snapshot {
 }
 
 type Status = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready'; data: Snapshot };
+
+export interface QuoteSyncResult {
+  provider: QuoteProvider;
+  /** Cotizaciones que cambiaron de valor. */
+  changes: RateChange[];
+  /** Cuántos valores se descartaron por no parecer reales. */
+  rejected: number;
+}
+
+export interface QuotesSyncState {
+  syncing: boolean;
+  /** Mensaje del último intento fallido; null si el último salió bien. */
+  error: string | null;
+}
 
 export interface AppActions {
   addExpense(input: NewExpense): Promise<Expense>;
@@ -36,6 +53,8 @@ export interface AppActions {
   saveRate(input: RateInput): Promise<void>;
   removeRate(id: string): Promise<void>;
   makeDefaultRate(id: string): Promise<void>;
+  /** Consulta las cotizaciones en vivo y actualiza las que siguen una fuente. Falla si no hay conexión. */
+  syncQuotes(): Promise<QuoteSyncResult>;
   /** Devuelve una copia previa para poder deshacer. */
   recalculateAllRates(): Promise<BackupFile>;
   saveCategory(input: NewCategory, id?: string): Promise<Category>;
@@ -49,6 +68,7 @@ export interface AppActions {
 export interface AppDataContextValue extends Snapshot {
   today: ISODate;
   persistent: boolean;
+  quotesSync: QuotesSyncState;
   categoryById: Map<string, Category>;
   expenseById: Map<string, Expense>;
   categoryName: (id: string) => string;
@@ -78,6 +98,38 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refresh().catch((error: unknown) => setStatus({ kind: 'error', message: errorMessage(error) }));
     if (repositories.persistent) void requestPersistentStorage();
+  }, [refresh]);
+
+  const [quotesSync, setQuotesSync] = useState<QuotesSyncState>({ syncing: false, error: null });
+  const syncInFlight = useRef<Promise<QuoteSyncResult> | null>(null);
+
+  const syncQuotes = useCallback((): Promise<QuoteSyncResult> => {
+    // Si ya hay una consulta en curso, todos comparten esa misma.
+    if (syncInFlight.current) return syncInFlight.current;
+    setQuotesSync({ syncing: true, error: null });
+    const run = (async (): Promise<QuoteSyncResult> => {
+      try {
+        const { quotes, provider } = await fetchQuotes();
+        // Los ajustes se leen recién ahora: la consulta tarda y pudieron cambiar mientras tanto.
+        const current = await repositories.settings.get();
+        const result = applyQuotes(current, quotes, provider, todayISO(), nowTimestamp());
+        await repositories.settings.update({
+          rates: result.settings.rates,
+          rateHistory: result.settings.rateHistory,
+          quotes: result.settings.quotes,
+        });
+        await refresh();
+        setQuotesSync({ syncing: false, error: null });
+        return { provider, changes: result.changes, rejected: result.rejected.length };
+      } catch (error) {
+        setQuotesSync({ syncing: false, error: errorMessage(error) });
+        throw error;
+      } finally {
+        syncInFlight.current = null;
+      }
+    })();
+    syncInFlight.current = run;
+    return run;
   }, [refresh]);
 
   const data = status.kind === 'ready' ? status.data : null;
@@ -149,12 +201,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       rememberQuickAdd: (categoryId, paymentMethod) =>
         mutate(async () => {
           if (settings.quickAdd.lastCategoryId === categoryId && settings.quickAdd.lastPaymentMethod === paymentMethod) return;
-          await repositories.settings.update({ quickAdd: { lastCategoryId: categoryId, lastPaymentMethod: paymentMethod } });
+          await repositories.settings.update({ quickAdd: { ...settings.quickAdd, lastCategoryId: categoryId, lastPaymentMethod: paymentMethod } });
         }),
 
       saveRate: (input) =>
         mutate(async () => {
-          const next = upsertRate(settings, input, today);
+          let arsPerUnit = input.arsPerUnit;
+          // Al elegir (o cambiar) una fuente en vivo se toma el valor de hoy de esa fuente.
+          // Si la fuente no cambió, se conserva el valor y se puede editar sin conexión.
+          if (input.autoSource && input.autoSource !== findRate(settings.rates, input.id)?.autoSource) {
+            const { quotes } = await fetchQuotes();
+            const quote = quotes[input.autoSource];
+            if (!quote) throw new Error('Esa fuente no tiene cotización en este momento. Probá más tarde o elegí «Manual».');
+            arsPerUnit = quote.sell;
+          }
+          const current = await repositories.settings.get();
+          const next = upsertRate(current, { ...input, arsPerUnit }, today);
           await repositories.settings.update({ rates: next.rates, rateHistory: next.rateHistory });
         }),
 
@@ -169,6 +231,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           const next = setDefaultRate(settings, id);
           await repositories.settings.update({ rates: next.rates });
         }),
+
+      syncQuotes,
 
       recalculateAllRates: () =>
         mutate(async () => {
@@ -198,7 +262,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       importBackup: (file) => mutate(() => repositories.backup.replaceAll(file.data)),
     };
-  }, [data, refresh, today]);
+  }, [data, refresh, today, syncQuotes]);
 
   const value = useMemo<AppDataContextValue | null>(() => {
     if (!data || !actions) return null;
@@ -207,12 +271,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       ...data,
       today,
       persistent: repositories.persistent,
+      quotesSync,
       categoryById,
       expenseById: new Map(data.expenses.map((e) => [e.id, e])),
       categoryName: (id: string) => categoryById.get(id)?.name ?? 'Otros',
       actions,
     };
-  }, [data, actions, today]);
+  }, [data, actions, today, quotesSync]);
 
   if (status.kind === 'loading') {
     return (

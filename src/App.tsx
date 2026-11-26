@@ -5,6 +5,7 @@ import { FabAdd } from './components/layout/FabAdd';
 import { UpdatePrompt } from './components/layout/UpdatePrompt';
 import { QuickAddSheet, type QuickAddHandle } from './components/quick-add/QuickAddSheet';
 import { useHashRoute } from './hooks/useHashRoute';
+import { useQuotesSync } from './hooks/useQuotesSync';
 import { useApplyTheme } from './hooks/useTheme';
 import { CommitmentsScreen } from './screens/CommitmentsScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
@@ -27,6 +28,15 @@ export function App() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   useApplyTheme(settings.theme);
+  useQuotesSync();
+
+  // Enlace directo (#/nuevo) u opción "Abrir el panel al entrar": al abrir la app aparece la carga rápida.
+  // Solo corre al abrir, no cada vez que cambian los ajustes.
+  useEffect(() => {
+    const fromLink = /^#\/?nuevo$/.test(window.location.hash);
+    if (fromLink) window.history.replaceState(null, '', '#/inicio');
+    if (fromLink || settings.quickAdd.openOnLaunch) quickAdd.current?.openNew();
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });

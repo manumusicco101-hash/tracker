@@ -28,6 +28,20 @@ export interface Budget {
 // Cotizaciones
 // ─────────────────────────────────────────────────────────────
 
+/** Cotizaciones en vivo que la app sabe seguir. Cada una es de una sola moneda. */
+export type QuoteSource =
+  | 'usd-oficial'
+  | 'usd-mep'
+  | 'usd-tarjeta'
+  | 'usd-blue'
+  | 'usd-ccl'
+  | 'usd-mayorista'
+  | 'usd-cripto'
+  | 'eur-oficial';
+
+/** Servicio que respondió en la última consulta. */
+export type QuoteProvider = 'dolarapi' | 'bluelytics';
+
 export interface ExchangeRate {
   id: string;
   currency: ForeignCurrency;
@@ -37,6 +51,8 @@ export interface ExchangeRate {
   arsPerUnit: number;
   /** Cotización por defecto de su moneda (exactamente una por moneda). */
   isDefault: boolean;
+  /** Fuente en vivo que la mantiene al día. null = manual: el valor lo escribe el usuario. */
+  autoSource: QuoteSource | null;
   updatedAt: Timestamp;
 }
 
@@ -183,6 +199,15 @@ export interface Settings {
   quickAdd: {
     lastCategoryId: string | null;
     lastPaymentMethod: PaymentMethod;
+    /** Al abrir la app aparece directo el panel de carga rápida. */
+    openOnLaunch: boolean;
+  };
+  /** Actualización automática de las cotizaciones en vivo. */
+  quotes: {
+    autoUpdate: boolean;
+    /** Última consulta exitosa. */
+    lastSyncAt: Timestamp | null;
+    provider: QuoteProvider | null;
   };
   theme: ThemePreference;
 }

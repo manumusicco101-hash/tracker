@@ -112,3 +112,64 @@ describe('backup', () => {
     expect(migrate(data).expenses[0].categoryId).toBe(OTHER_CATEGORY_ID);
   });
 });
+
+describe('migración v1 → v2 (cotizaciones en vivo)', () => {
+  /** Datos como los guardaba la v1: sin autoSource, sin quotes y sin openOnLaunch. */
+  function makeV1Content() {
+    const { schemaVersion: _v, ...content } = createInitialData(today);
+    const v1 = JSON.parse(JSON.stringify(content)) as {
+      settings: { rates: Array<Record<string, unknown>>; quotes?: unknown; quickAdd: Record<string, unknown> };
+    };
+    for (const rate of v1.settings.rates) delete rate.autoSource;
+    delete v1.settings.quotes;
+    delete v1.settings.quickAdd.openOnLaunch;
+    v1.settings.rates.push({ id: 'mi-cotizacion', currency: 'USD', label: 'Mía', arsPerUnit: 1700, isDefault: false, updatedAt: '2026-11-01T12:00:00.000Z' });
+    return v1;
+  }
+
+  it('las cotizaciones de fábrica pasan a seguirse en vivo y las propias quedan manuales', () => {
+    const migrated = migrate({ ...makeV1Content(), schemaVersion: 1 });
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    const auto = migrated.settings.rates.filter((r) => r.autoSource).map((r) => [r.id, r.autoSource]);
+    expect(auto.sort()).toEqual([
+      ['eur-oficial', 'eur-oficial'],
+      ['usd-mep', 'usd-mep'],
+      ['usd-oficial', 'usd-oficial'],
+      ['usd-tarjeta', 'usd-tarjeta'],
+    ]);
+    expect(migrated.settings.rates.find((r) => r.id === 'mi-cotizacion')?.autoSource).toBeNull();
+    expect(migrated.settings.quotes).toEqual({ autoUpdate: true, lastSyncAt: null, provider: null });
+    expect(migrated.settings.quickAdd.openOnLaunch).toBe(false);
+  });
+
+  it('un backup exportado con la v1 se puede importar', () => {
+    const backup = { app: 'gastos-tracker', schemaVersion: 1, exportedAt: '2026-11-25T12:00:00.000Z', data: makeV1Content() };
+    const parsed = parseBackup(JSON.stringify(backup));
+    expect(parsed.data.settings.quotes.autoUpdate).toBe(true);
+    expect(parsed.data.settings.rates.find((r) => r.id === 'usd-oficial')?.autoSource).toBe('usd-oficial');
+    expect(summarizeBackup(parsed).expenses).toBe(18);
+  });
+
+  it('datos ya en v2 con una fuente inválida o de otra moneda la dejan manual', () => {
+    const { schemaVersion: _v, ...content } = createInitialData(today);
+    const broken = JSON.parse(JSON.stringify(content)) as { settings: { rates: Array<Record<string, unknown>> } };
+    broken.settings.rates[0].autoSource = 'eur-oficial'; // usd-oficial con fuente de euro
+    broken.settings.rates[1].autoSource = 'no-existe';
+    const migrated = migrate({ ...broken, schemaVersion: SCHEMA_VERSION });
+    expect(migrated.settings.rates[0].autoSource).toBeNull();
+    expect(migrated.settings.rates[1].autoSource).toBeNull();
+    expect(migrated.settings.rates[2].autoSource).toBe('usd-tarjeta');
+  });
+
+  it('los ajustes de cotización y de carga rápida sobreviven a un guardado y una lectura', async () => {
+    const { repos } = fresh();
+    await repos.settings.update({
+      quotes: { autoUpdate: false, lastSyncAt: '2026-11-25T15:00:00.000Z', provider: 'bluelytics' },
+      quickAdd: { lastCategoryId: 'ocio', lastPaymentMethod: 'credit', openOnLaunch: true },
+    });
+    const file = await repos.backup.exportAll();
+    const roundTrip = parseBackup(serializeBackup(file));
+    expect(roundTrip.data.settings.quotes).toEqual({ autoUpdate: false, lastSyncAt: '2026-11-25T15:00:00.000Z', provider: 'bluelytics' });
+    expect(roundTrip.data.settings.quickAdd.openOnLaunch).toBe(true);
+  });
+});

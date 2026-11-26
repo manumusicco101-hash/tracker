@@ -66,6 +66,7 @@ npm run generate-pwa-assets
 - **Cotizaciones contra ARS (moneda pivote).** Cada gasto guarda `rateAtCreation`, la foto de todas las cotizaciones al cargarlo. Para convertir: `monto × tabla[origen] / tabla[base]`. Por eso cambiar la moneda base de ARS a USD no toca ningún registro.
 - **Cotizaciones con etiqueta** (Oficial, MEP, Tarjeta…): se elige una al cargar un gasto en moneda extranjera.
 - **Recurrentes en moneda extranjera:** cada ocurrencia usa la cotización vigente en su fecha, según el historial de cambios que se guarda al editar una cotización. Los gastos únicos y las cuotas usan siempre su `rateAtCreation`.
+- **Cotizaciones en vivo:** cada cotización puede seguir una fuente (dólar oficial, MEP, tarjeta, blue, contado con liqui, mayorista, cripto; euro oficial). La app consulta [DolarApi](https://dolarapi.com) (respaldo: [Bluelytics](https://bluelytics.com.ar)) al abrir, al volver a la app y cada 30 minutos, toma el precio de **venta** y guarda cada cambio en el historial. Si el valor se escribe a mano, la cotización pasa a **Manual**. La lógica es pura (`src/lib/quotes.ts`); la consulta de red vive aparte (`src/services/quotesApi.ts`).
 - **`schemaVersion`** en los datos y en los backups, con migraciones en `src/data/migrations.ts`.
 
 ### Reglas de cálculo (`src/lib/`)
@@ -80,6 +81,7 @@ npm run generate-pwa-assets
 | "Total de hoy" = únicos + cuotas + recurrentes con fecha hoy | `aggregations.ts` → `totalOn` |
 | Presupuesto: verde < 75 %, amarillo 75–99 %, rojo ≥ 100 % | `aggregations.ts` → `budgetLevel` |
 | CSV para Excel AR: `;`, BOM UTF-8, coma decimal | `csv.ts` |
+| Cotización en vivo: solo cambia las que siguen una fuente y descarta valores que se alejan más de 2× del actual | `quotes.ts` → `applyQuotes` |
 
 Si la primera cuota cae el mes siguiente, el día de la compra se muestra una fila informativa que no suma, para que se vea que la compra quedó cargada.
 
@@ -95,9 +97,11 @@ Los componentes no tocan `localStorage`: usan el estado global (`src/state/AppDa
 src/
 ├── types/            Interfaces del modelo de datos
 ├── lib/              Lógica pura y testeada: fechas, montos, cuotas, recurrentes,
-│                     monedas, ocurrencias, totales, filtros, CSV, formulario
+│                     monedas, cotizaciones en vivo, ocurrencias, totales, filtros,
+│                     CSV, formulario
 ├── data/             Persistencia: storage, repositorios, validación, migraciones,
 │                     backup, categorías por defecto y datos de ejemplo
+├── services/         Consulta de cotizaciones en vivo (DolarApi / Bluelytics)
 ├── state/            Estado global, toasts y diálogos de confirmación
 ├── hooks/            Fecha local, botón "atrás", teclado de iOS, tema, navegación
 ├── components/
@@ -117,4 +121,6 @@ src/
 - **Editar o eliminar una cuota u ocurrencia** modifica el registro madre (la compra o la serie completa). La app lo avisa antes de confirmar, y eliminar ofrece "Deshacer" durante 5 segundos.
 - **Cancelar un recurrente** frena las ocurrencias futuras y conserva las pasadas. **Cambiar monto desde la próxima** cierra la serie hoy y abre otra con el monto nuevo.
 - **Eliminar una categoría** pasa sus gastos a "Otros", que no se puede eliminar.
+- **Cotizaciones automáticas:** Ajustes → Cotizaciones tiene el interruptor general, el botón «Actualizar ahora» y, al editar una cotización, la opción «En vivo · …» o «Manual». Sin conexión se sigue con el último valor.
+- **Abrir directo en la carga rápida:** el enlace `/#/nuevo` abre la app con el panel de carga rápida, y Ajustes → Carga rápida tiene la opción «Abrir el panel al entrar a la app». En iPhone el teclado no aparece solo: hay que tocar el monto. Para el botón de acción del iPhone, usá un Atajo con **Abrir app → Gastos**; no uses «Abrir URLs», porque abre Safari, que guarda los datos aparte de la app instalada.
 - **Exportá un backup JSON de vez en cuando:** los datos viven solo en el navegador de cada dispositivo.

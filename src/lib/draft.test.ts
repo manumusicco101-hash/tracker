@@ -10,7 +10,7 @@ const categories: Category[] = [
 
 describe('Quick Add: borrador precargado', () => {
   it('usa la última categoría y método, moneda base, hoy y pago único', () => {
-    const settings = makeSettings({ quickAdd: { lastCategoryId: 'otros', lastPaymentMethod: 'cash' } });
+    const settings = makeSettings({ quickAdd: { lastCategoryId: 'otros', lastPaymentMethod: 'cash', openOnLaunch: false } });
     const d = createDraft(settings, categories, '2026-11-25');
     expect(d).toMatchObject({ categoryId: 'otros', paymentMethod: 'cash', currency: 'ARS', date: '2026-11-25', mode: 'single' });
   });

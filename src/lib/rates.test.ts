@@ -54,4 +54,26 @@ describe('cotizaciones', () => {
     expect(updates[1]).toEqual({ id: 'b', rateAtCreation: { ARS: 1, USD: 1885, EUR: 1700 }, rateId: 'usd-tarjeta', rateLabel: 'Tarjeta' });
     expect(updates[2].rateId).toBe('usd-oficial');
   });
+
+  it('una cotización nueva es manual salvo que se elija una fuente en vivo', () => {
+    const s = upsertRate(makeSettings(), { currency: 'USD', label: 'Blue', arsPerUnit: 1700, isDefault: false }, '2026-11-25');
+    expect(s.rates.find((r) => r.label === 'Blue')?.autoSource).toBeNull();
+    const auto = upsertRate(makeSettings(), { currency: 'USD', label: 'Blue', arsPerUnit: 1700, isDefault: false, autoSource: 'usd-blue' }, '2026-11-25');
+    expect(auto.rates.find((r) => r.label === 'Blue')?.autoSource).toBe('usd-blue');
+  });
+
+  it('al editar se mantiene la fuente en vivo; con null pasa a manual', () => {
+    const base = makeSettings();
+    const withAuto = { ...base, rates: base.rates.map((r) => (r.id === 'usd-oficial' ? { ...r, autoSource: 'usd-oficial' as const } : r)) };
+    const renamed = upsertRate(withAuto, { id: 'usd-oficial', currency: 'USD', label: 'BNA', arsPerUnit: 1450, isDefault: true }, '2026-11-25');
+    expect(renamed.rates.find((r) => r.id === 'usd-oficial')?.autoSource).toBe('usd-oficial');
+    const manual = upsertRate(withAuto, { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1500, isDefault: true, autoSource: null }, '2026-11-25');
+    expect(manual.rates.find((r) => r.id === 'usd-oficial')?.autoSource).toBeNull();
+  });
+
+  it('no permite una fuente de otra moneda', () => {
+    expect(() =>
+      upsertRate(makeSettings(), { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, autoSource: 'usd-oficial' }, '2026-11-25'),
+    ).toThrow('no es de EUR');
+  });
 });

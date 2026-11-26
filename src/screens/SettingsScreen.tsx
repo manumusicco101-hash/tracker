@@ -2,6 +2,7 @@ import { Coins, Info, Monitor, Moon, Palette, Sun, TriangleAlert } from 'lucide-
 import { BudgetSection } from '../components/settings/BudgetSection';
 import { CategoriesSection } from '../components/settings/CategoriesSection';
 import { DataSection } from '../components/settings/DataSection';
+import { QuickAddSection } from '../components/settings/QuickAddSection';
 import { RatesSection } from '../components/settings/RatesSection';
 import { SettingsCard } from '../components/settings/SettingsCard';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
@@ -67,6 +68,7 @@ export function SettingsScreen() {
         />
       </SettingsCard>
 
+      <QuickAddSection />
       <RatesSection />
       <BudgetSection />
       <CategoriesSection />

@@ -1,7 +1,8 @@
-import type { ExchangeRate, Expense, ForeignCurrency, ISODate, RateHistoryEntry, RateTable, Settings } from '../types';
+import type { ExchangeRate, Expense, ForeignCurrency, ISODate, QuoteSource, RateHistoryEntry, RateTable, Settings } from '../types';
 import { currentRateTable, defaultRate, findRate, FOREIGN_CURRENCIES, isForeign } from './currency';
 import { nowTimestamp } from './dates';
 import { createId } from './id';
+import { QUOTE_SOURCES } from './quoteSources';
 
 export interface RateInput {
   id?: string;
@@ -9,6 +10,8 @@ export interface RateInput {
   label: string;
   arsPerUnit: number;
   isDefault: boolean;
+  /** Fuente en vivo. undefined = dejar la que tenía; null = pasar a manual. */
+  autoSource?: QuoteSource | null;
 }
 
 /** Garantiza exactamente una cotización por defecto por moneda. */
@@ -42,12 +45,18 @@ export function upsertRate(settings: Settings, input: RateInput, today: ISODate,
   }
   const existing = findRate(settings.rates, input.id);
   const id = existing?.id ?? createId();
+  const currency = existing?.currency ?? input.currency;
+  const autoSource = input.autoSource === undefined ? (existing?.autoSource ?? null) : input.autoSource;
+  if (autoSource && QUOTE_SOURCES[autoSource].currency !== currency) {
+    throw new Error(`Esa fuente no es de ${currency}.`);
+  }
   const rate: ExchangeRate = {
     id,
-    currency: existing?.currency ?? input.currency,
+    currency,
     label: input.label.trim(),
     arsPerUnit: input.arsPerUnit,
     isDefault: input.isDefault,
+    autoSource,
     updatedAt: now,
   };
   const withRate = existing ? settings.rates.map((r) => (r.id === id ? rate : r)) : [...settings.rates, rate];

@@ -45,14 +45,14 @@ export function createOtherCategory(order: number): Category {
 
 /**
  * Cotizaciones iniciales (ARS por unidad). Son valores de referencia para arrancar:
- * se editan en Ajustes → Cotizaciones.
+ * con conexión, la app los reemplaza por los de hoy (cada una sigue su fuente en vivo).
  */
 export function createDefaultRates(now: string): ExchangeRate[] {
   return [
-    { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1450, isDefault: true, updatedAt: now },
-    { id: 'usd-mep', currency: 'USD', label: 'MEP', arsPerUnit: 1480, isDefault: false, updatedAt: now },
-    { id: 'usd-tarjeta', currency: 'USD', label: 'Tarjeta', arsPerUnit: 1885, isDefault: false, updatedAt: now },
-    { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, updatedAt: now },
+    { id: 'usd-oficial', currency: 'USD', label: 'Oficial', arsPerUnit: 1450, isDefault: true, autoSource: 'usd-oficial', updatedAt: now },
+    { id: 'usd-mep', currency: 'USD', label: 'MEP', arsPerUnit: 1480, isDefault: false, autoSource: 'usd-mep', updatedAt: now },
+    { id: 'usd-tarjeta', currency: 'USD', label: 'Tarjeta', arsPerUnit: 1885, isDefault: false, autoSource: 'usd-tarjeta', updatedAt: now },
+    { id: 'eur-oficial', currency: 'EUR', label: 'Oficial', arsPerUnit: 1700, isDefault: true, autoSource: 'eur-oficial', updatedAt: now },
   ];
 }
 
@@ -62,7 +62,8 @@ export function createDefaultSettings(now: string): Settings {
     rates: createDefaultRates(now),
     rateHistory: [],
     budget: { amountCents: 900_000_00, currency: 'ARS' },
-    quickAdd: { lastCategoryId: 'alimentacion', lastPaymentMethod: 'debit' },
+    quickAdd: { lastCategoryId: 'alimentacion', lastPaymentMethod: 'debit', openOnLaunch: false },
+    quotes: { autoUpdate: true, lastSyncAt: null, provider: null },
     theme: 'system',
   };
 }

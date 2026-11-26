@@ -2,6 +2,7 @@ import { BASE_CURRENCIES, FOREIGN_CURRENCIES } from '../lib/currency';
 import { isValidISODate } from '../lib/dates';
 import { EXPENSE_KINDS, PAYMENT_METHODS } from '../lib/labels';
 import { CURRENCY_CODES } from '../lib/money';
+import { isQuoteSource, QUOTE_SOURCES } from '../lib/quoteSources';
 import type {
   AppDataContent,
   BaseCurrency,
@@ -181,12 +182,16 @@ function validateCategory(v: unknown, path: string, index: number): Category {
 
 function validateRate(v: unknown, path: string): ExchangeRate {
   const o = obj(v, path);
+  const currency = oneOf<ForeignCurrency>(o, 'currency', path, FOREIGN_CURRENCIES);
+  // Una fuente desconocida o de otra moneda se descarta: la cotización queda manual.
+  const autoSource = isQuoteSource(o.autoSource) && QUOTE_SOURCES[o.autoSource].currency === currency ? o.autoSource : null;
   return {
     id: str(o, 'id', path),
-    currency: oneOf<ForeignCurrency>(o, 'currency', path, FOREIGN_CURRENCIES),
+    currency,
     label: typeof o.label === 'string' ? o.label : '',
     arsPerUnit: num(o, 'arsPerUnit', path, { min: Number.MIN_VALUE }),
     isDefault: o.isDefault === true,
+    autoSource,
     updatedAt: timestamp(o, 'updatedAt'),
   };
 }
@@ -214,6 +219,7 @@ function validateSettings(v: unknown, path: string): Settings {
     }
   }
   const quick = isObj(o.quickAdd) ? o.quickAdd : {};
+  const quotes = isObj(o.quotes) ? o.quotes : {};
   return {
     baseCurrency: oneOf<BaseCurrency>(o, 'baseCurrency', path, BASE_CURRENCIES),
     rates,
@@ -224,6 +230,12 @@ function validateSettings(v: unknown, path: string): Settings {
       lastPaymentMethod: (PAYMENT_METHODS as string[]).includes(quick.lastPaymentMethod as string)
         ? (quick.lastPaymentMethod as PaymentMethod)
         : 'debit',
+      openOnLaunch: quick.openOnLaunch === true,
+    },
+    quotes: {
+      autoUpdate: typeof quotes.autoUpdate === 'boolean' ? quotes.autoUpdate : true,
+      lastSyncAt: typeof quotes.lastSyncAt === 'string' && !Number.isNaN(Date.parse(quotes.lastSyncAt)) ? quotes.lastSyncAt : null,
+      provider: quotes.provider === 'dolarapi' || quotes.provider === 'bluelytics' ? quotes.provider : null,
     },
     theme: (['system', 'light', 'dark'] as const).includes(o.theme as ThemePreference) ? (o.theme as ThemePreference) : 'system',
   };
