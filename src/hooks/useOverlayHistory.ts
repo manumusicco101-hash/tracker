@@ -19,6 +19,12 @@ let markerActive = false;
 let ignoredPops = 0;
 let listening = false;
 
+// La posición de la página la maneja la app: el "atrás" que quita la marca al cerrar un panel
+// no tiene que mover el scroll (en iOS se cruzaba con el cierre del teclado).
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 // Si la página se recargó con un panel abierto, la entrada marcada quedó en el historial:
 // se limpia la marca para no confundirla con un panel abierto.
 if (typeof window !== 'undefined' && window.history.state?.overlay) {

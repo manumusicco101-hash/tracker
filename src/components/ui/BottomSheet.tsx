@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 import { useOverlayHistory } from '../../hooks/useOverlayHistory';
+import { lockPageScroll } from '../../utils/scrollLock';
 
 interface BottomSheetProps {
   open: boolean;
@@ -16,20 +17,6 @@ interface BottomSheetProps {
   panelRef?: Ref<HTMLDivElement>;
   /** Clases extra para el contenedor del contenido. */
   bodyClassName?: string;
-}
-
-let openSheets = 0;
-
-function lockBodyScroll(): () => void {
-  openSheets += 1;
-  document.body.style.overflow = 'hidden';
-  return () => {
-    openSheets -= 1;
-    if (openSheets <= 0) {
-      openSheets = 0;
-      document.body.style.overflow = '';
-    }
-  };
 }
 
 const CLOSE_DRAG_DISTANCE = 110;
@@ -80,18 +67,24 @@ export function BottomSheet({
     return () => window.clearTimeout(timeout);
   }, [open, keepMounted]);
 
+  // onClose se lee siempre actualizado: si cambia de identidad no hay que soltar y volver a bloquear el scroll.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
-    const unlock = lockBodyScroll();
+    const unlock = lockPageScroll();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => {
       unlock();
       window.removeEventListener('keydown', onKey);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted) return null;
 
