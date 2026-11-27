@@ -24,7 +24,9 @@ export function useExpenseActions() {
           title: e.kind === 'installments' ? '¿Eliminar la compra completa?' : '¿Eliminar toda la serie?',
           message:
             e.kind === 'installments'
-              ? `Se eliminan las ${e.installments.count} cuotas de "${title}", incluidas las que ya pasaron.`
+              ? e.installments.count === 1
+                ? `Se elimina la compra "${title}" (1 cuota).`
+                : `Se eliminan las ${e.installments.count} cuotas de "${title}", incluidas las que ya pasaron.`
               : `Se elimina "${title}" con todas sus ocurrencias, también las pasadas del historial. Si solo querés que no se repita más, usá "Cancelar recurrente".`,
           confirmLabel: 'Eliminar',
           tone: 'danger',

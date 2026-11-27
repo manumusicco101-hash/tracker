@@ -1,7 +1,7 @@
 import { CalendarClock, Repeat } from 'lucide-react';
 import { formatDayMonth } from '../../lib/dates';
 import { expenseTitle } from '../../lib/expenses';
-import { installmentDates } from '../../lib/installments';
+import { installmentCountLabel, installmentDates } from '../../lib/installments';
 import { PAYMENT_METHOD_LABELS } from '../../lib/labels';
 import { formatCode, formatMoney } from '../../lib/money';
 import { isPurchaseMarker } from '../../lib/occurrences';
@@ -29,7 +29,8 @@ export function OccurrenceRow({ occurrence: o, onClick, showDate = false }: Occu
   let markerText = '';
   if (marker && expense?.kind === 'installments') {
     const first = installmentDates(expense.date, expense.installments.count, expense.installments.firstDue)[0];
-    markerText = `${expense.installments.count} cuotas · 1ª el ${formatDayMonth(first)}`;
+    const count = expense.installments.count;
+    markerText = `${installmentCountLabel(count)} · ${count === 1 ? 'se paga' : '1ª'} el ${formatDayMonth(first)}`;
   }
 
   return (
@@ -54,7 +55,7 @@ export function OccurrenceRow({ occurrence: o, onClick, showDate = false }: Occu
           )}
           {o.installment && (
             <Badge tone="indigo">
-              Cuota {o.installment.number}/{o.installment.count}
+              {o.installment.count === 1 ? '1 cuota' : `Cuota ${o.installment.number}/${o.installment.count}`}
             </Badge>
           )}
           {marker && (

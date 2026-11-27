@@ -108,7 +108,7 @@ export function draftFromExpense(e: Expense): ExpenseDraft {
 export function effectiveInstallmentCount(draft: ExpenseDraft): number | null {
   if (!draft.useCustomCount) return draft.installmentCount;
   const n = Number(draft.customCountText.trim());
-  return Number.isInteger(n) && n >= 2 && n <= MAX_INSTALLMENTS ? n : null;
+  return Number.isInteger(n) && n >= 1 && n <= MAX_INSTALLMENTS ? n : null;
 }
 
 /** Cuotas calculadas para la vista previa, o null si faltan datos. */
@@ -169,7 +169,7 @@ export function buildExpenseFromDraft(
     if (draft.paymentMethod !== 'credit') {
       errors.installments = 'Las cuotas solo están disponibles con tarjeta de crédito.';
     } else if (count === null) {
-      errors.installments = `Ingresá entre 2 y ${MAX_INSTALLMENTS} cuotas.`;
+      errors.installments = `Ingresá entre 1 y ${MAX_INSTALLMENTS} cuotas.`;
     }
     let financedTotalCents = amountCents ?? 0;
     if (draft.interest === 'financed') {

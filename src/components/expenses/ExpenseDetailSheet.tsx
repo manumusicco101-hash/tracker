@@ -4,7 +4,7 @@ import { sumBase } from '../../lib/aggregations';
 import { convert } from '../../lib/currency';
 import { formatDayMonth, formatLongDate, formatNumericDate, localDateFromTimestamp } from '../../lib/dates';
 import { expenseTitle } from '../../lib/expenses';
-import { describeSplit, installmentProgress, installmentSchedule, interestCents } from '../../lib/installments';
+import { describeSplit, installmentCountLabel, installmentProgress, installmentSchedule, interestCents } from '../../lib/installments';
 import { KIND_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/labels';
 import { formatCents, formatCode, formatMoney, formatRate, parseAmountInput } from '../../lib/money';
 import { expandExpense } from '../../lib/occurrences';
@@ -114,8 +114,8 @@ function DetailContent({ expense: e, occurrence, onClose }: { expense: Expense; 
                 Recurrente
               </Badge>
             )}
-            {e.kind === 'installments' && <Badge tone="indigo">{e.installments.count} cuotas</Badge>}
-            {occurrence?.installment && (
+            {e.kind === 'installments' && <Badge tone="indigo">{installmentCountLabel(e.installments.count)}</Badge>}
+            {occurrence?.installment && occurrence.installment.count > 1 && (
               <Badge tone="indigo">
                 Viendo cuota {occurrence.installment.number}/{occurrence.installment.count}
               </Badge>
@@ -208,7 +208,9 @@ function DetailContent({ expense: e, occurrence, onClose }: { expense: Expense; 
       {isSeries && (
         <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
           {e.kind === 'installments'
-            ? 'Editar o eliminar afecta a la compra completa, con todas sus cuotas.'
+            ? e.installments.count === 1
+              ? 'Editar o eliminar afecta a esta compra.'
+              : 'Editar o eliminar afecta a la compra completa, con todas sus cuotas.'
             : 'Editar o eliminar afecta a toda la serie, incluidas las ocurrencias pasadas.'}
         </p>
       )}
@@ -239,6 +241,29 @@ function InstallmentsDetail({
   const progress = installmentProgress(e, today);
   const interest = interestCents(e);
   const format = (cents: number) => formatCents(cents, e.currency);
+
+  // 1 cuota = un solo pago con la tarjeta: alcanza con decir cuándo se paga.
+  if (schedule.length === 1) {
+    const [only] = schedule;
+    const paid = only.date <= today;
+    return (
+      <div className="space-y-1">
+        <p className="flex items-center gap-2 text-sm font-medium">
+          {paid ? (
+            <CircleCheck className="size-4 shrink-0 text-emerald-500" aria-hidden />
+          ) : (
+            <CalendarClock className="size-4 shrink-0 text-zinc-400" aria-hidden />
+          )}
+          Un solo pago con la tarjeta · {paid ? 'pagado' : 'se paga'} el {formatNumericDate(only.date)}
+        </p>
+        {e.installments.interest === 'financed' && (
+          <p className="text-sm text-zinc-500 tabular-nums dark:text-zinc-400">
+            Precio de contado {format(e.amountCents)} · interés {format(interest)}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

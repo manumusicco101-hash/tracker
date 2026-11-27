@@ -1,7 +1,8 @@
 import type { ISODate, InstallmentExpense, InstallmentPlan } from '../types';
 import { addMonths, dateInMonth, monthOf, parseISODate } from './dates';
 
-export const INSTALLMENT_PRESETS = [2, 3, 6, 9, 12, 18] as const;
+/** 1 = un solo pago con tarjeta: suma en el mes en que se paga (el del resumen). */
+export const INSTALLMENT_PRESETS = [1, 2, 3, 6, 9, 12, 18] as const;
 export const MAX_INSTALLMENTS = 72;
 
 /**
@@ -73,11 +74,16 @@ export function interestCents(e: Pick<InstallmentExpense, 'amountCents' | 'insta
   return e.installments.financedTotalCents - e.amountCents;
 }
 
-/** Texto de resumen: "6 cuotas de $ 20.000" o "2 × $ 33.333,33 + 1 × $ 33.333,34". */
+/** "1 cuota" / "6 cuotas". */
+export function installmentCountLabel(count: number): string {
+  return count === 1 ? '1 cuota' : `${count} cuotas`;
+}
+
+/** Texto de resumen: "1 cuota de $ 50.000", "6 cuotas de $ 20.000" o "2 × $ 33.333,33 + 1 × $ 33.333,34". */
 export function describeSplit(amounts: number[], format: (cents: number) => string): string {
   if (amounts.length === 0) return '';
   const first = amounts[0];
   const last = amounts[amounts.length - 1];
-  if (first === last) return `${amounts.length} cuotas de ${format(first)}`;
+  if (first === last) return `${installmentCountLabel(amounts.length)} de ${format(first)}`;
   return `${amounts.length - 1} × ${format(first)} + 1 × ${format(last)}`;
 }

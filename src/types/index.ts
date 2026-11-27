@@ -112,7 +112,7 @@ export interface SingleExpense extends ExpenseBase {
 }
 
 export interface InstallmentPlan {
-  /** Cantidad de cuotas (≥ 2). */
+  /** Cantidad de cuotas (≥ 1). 1 = un solo pago con tarjeta, que suma en el mes en que se paga. */
   count: number;
   interest: 'none' | 'financed';
   /** Total a pagar. Igual a amountCents si es sin interés. */

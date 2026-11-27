@@ -1,6 +1,6 @@
 import { CalendarClock } from 'lucide-react';
 import type { ExpenseDraft, DraftErrors } from '../../lib/draft';
-import { previewInstallments } from '../../lib/draft';
+import { effectiveInstallmentCount, previewInstallments } from '../../lib/draft';
 import { addMonths, dateInMonth, formatShortDate, monthOf, parseISODate } from '../../lib/dates';
 import { describeSplit, INSTALLMENT_PRESETS, interestCents } from '../../lib/installments';
 import { formatCents, parseAmountInput } from '../../lib/money';
@@ -16,6 +16,8 @@ interface InstallmentOptionsProps {
 
 export function InstallmentOptions({ draft, errors, onChange }: InstallmentOptionsProps) {
   const preview = previewInstallments(draft);
+  // 1 cuota = un solo pago con la tarjeta.
+  const single = effectiveInstallmentCount(draft) === 1;
   const format = (cents: number) => formatCents(cents, draft.currency);
   const amount = parseAmountInput(draft.amountText);
   const financed = parseAmountInput(draft.financedText);
@@ -56,6 +58,9 @@ export function InstallmentOptions({ draft, errors, onChange }: InstallmentOptio
             />
           </div>
         )}
+        {single && (
+          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Un solo pago con la tarjeta: suma en el mes en que lo pagás.</p>
+        )}
         {errors.installments && <p className="mt-1.5 text-sm text-rose-600 dark:text-rose-400">{errors.installments}</p>}
       </div>
 
@@ -90,9 +95,9 @@ export function InstallmentOptions({ draft, errors, onChange }: InstallmentOptio
       </div>
 
       <div>
-        <span className="label">Primera cuota en</span>
+        <span className="label">{single ? 'Se paga en' : 'Primera cuota en'}</span>
         <SegmentedControl
-          ariaLabel="Primera cuota en"
+          ariaLabel={single ? 'Se paga en' : 'Primera cuota en'}
           value={draft.firstDue}
           onChange={(firstDue) => onChange({ firstDue })}
           options={[
@@ -106,7 +111,12 @@ export function InstallmentOptions({ draft, errors, onChange }: InstallmentOptio
         <CalendarClock className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
         <span className="tabular-nums">
           {preview ? describeSplit(preview, format) : 'Ingresá el monto para ver las cuotas'}
-          {preview && <> · 1ª cuota el {formatShortDate(firstDate)}</>}
+          {preview && (
+            <>
+              {' · '}
+              {single ? 'se paga el' : '1ª cuota el'} {formatShortDate(firstDate)}
+            </>
+          )}
         </span>
       </p>
     </div>

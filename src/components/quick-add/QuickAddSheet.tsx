@@ -3,7 +3,7 @@ import { useCallback, useImperativeHandle, useRef, useState, type Ref } from 're
 import { defaultRate, isForeign } from '../../lib/currency';
 import { addDays, formatDayLabel, formatShortDate, isValidISODate, parseISODate } from '../../lib/dates';
 import { buildExpenseFromDraft, createDraft, draftFromExpense, type DraftErrors, type ExpenseDraft } from '../../lib/draft';
-import { installmentDates } from '../../lib/installments';
+import { installmentCountLabel, installmentDates } from '../../lib/installments';
 import { KIND_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from '../../lib/labels';
 import { CURRENCY_CODES } from '../../lib/money';
 import { useAppData } from '../../state/AppDataProvider';
@@ -98,7 +98,10 @@ export function QuickAddSheet({ ref }: { ref?: Ref<QuickAddHandle> }) {
         let message = 'Gasto guardado';
         if (e.kind === 'installments') {
           const first = installmentDates(e.date, e.installments.count, e.installments.firstDue)[0];
-          message = `Compra en ${e.installments.count} cuotas guardada · 1ª el ${formatShortDate(first)}`;
+          message =
+            e.installments.count === 1
+              ? `Compra en 1 cuota guardada · se paga el ${formatShortDate(first)}`
+              : `Compra en ${e.installments.count} cuotas guardada · 1ª el ${formatShortDate(first)}`;
         } else if (e.kind === 'recurring') {
           message = `Recurrente guardado · se repite el día ${e.recurrence.dayOfMonth}`;
         }
@@ -150,7 +153,7 @@ export function QuickAddSheet({ ref }: { ref?: Ref<QuickAddHandle> }) {
           <p className="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
             <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
             {editing.kind === 'installments'
-              ? `Estás editando la compra completa (${editing.installments.count} cuotas): los cambios afectan a todas las cuotas.`
+              ? `Estás editando la compra completa (${installmentCountLabel(editing.installments.count)}): los cambios afectan a ${editing.installments.count === 1 ? 'esa cuota' : 'todas las cuotas'}.`
               : 'Estás editando toda la serie: los cambios afectan también a las ocurrencias pasadas.'}
           </p>
         )}

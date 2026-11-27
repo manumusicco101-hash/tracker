@@ -173,6 +173,8 @@ export function CommitmentsScreen() {
           <ul className="card divide-y divide-zinc-100 overflow-hidden dark:divide-zinc-800">
             {data.activeInstallments.map(({ expense: e, progress, nextAmount, remainingBase }) => {
               const category = categoryById.get(e.categoryId);
+              // 1 cuota = un solo pago: sin "/cuota", sin barra de progreso ni saldo (es el mismo monto).
+              const single = progress.count === 1;
               return (
                 <li key={e.id}>
                   <button
@@ -186,19 +188,25 @@ export function CommitmentsScreen() {
                         <p className="truncate font-medium">{expenseTitle(e.note, category?.name ?? 'Otros')}</p>
                         <p className="shrink-0 text-sm font-semibold tabular-nums">
                           {formatMoney(convert(nextAmount / 100, e.currency, base, e.rateAtCreation), base)}
-                          <span className="font-normal text-zinc-500 dark:text-zinc-400">/cuota</span>
+                          {!single && <span className="font-normal text-zinc-500 dark:text-zinc-400">/cuota</span>}
                         </p>
                       </div>
                       <p className="mt-0.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                        {progress.paidCount} de {progress.count} pagadas · próxima {progress.nextDate ? formatDayMonth(progress.nextDate) : '—'}
+                        {single
+                          ? `1 cuota · se paga el ${progress.nextDate ? formatDayMonth(progress.nextDate) : '—'}`
+                          : `${progress.paidCount} de ${progress.count} pagadas · próxima ${progress.nextDate ? formatDayMonth(progress.nextDate) : '—'}`}
                       </p>
-                      <div className="mt-2">
-                        <ProgressBar percent={(progress.paidCount / progress.count) * 100} label="Cuotas pagadas" colorClass="bg-indigo-500" size="sm" />
-                      </div>
-                      <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                        Restan {formatMoney(remainingBase, base)}
-                        {e.currency !== base && ` (${formatCode(progress.remainingCents / 100, e.currency)})`}
-                      </p>
+                      {!single && (
+                        <>
+                          <div className="mt-2">
+                            <ProgressBar percent={(progress.paidCount / progress.count) * 100} label="Cuotas pagadas" colorClass="bg-indigo-500" size="sm" />
+                          </div>
+                          <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                            Restan {formatMoney(remainingBase, base)}
+                            {e.currency !== base && ` (${formatCode(progress.remainingCents / 100, e.currency)})`}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </button>
                 </li>

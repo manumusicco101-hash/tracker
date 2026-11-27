@@ -48,7 +48,9 @@ describe('cuotas', () => {
 
   it('cantidad personalizada', () => {
     expect(buildExpenseFromDraft({ ...base, useCustomCount: true, customCountText: '24' }, settings, categories).ok).toBe(true);
-    expect(buildExpenseFromDraft({ ...base, useCustomCount: true, customCountText: '1' }, settings, categories).ok).toBe(false);
+    expect(buildExpenseFromDraft({ ...base, useCustomCount: true, customCountText: '1' }, settings, categories).ok).toBe(true);
+    expect(buildExpenseFromDraft({ ...base, useCustomCount: true, customCountText: '0' }, settings, categories).ok).toBe(false);
+    expect(buildExpenseFromDraft({ ...base, useCustomCount: true, customCountText: '73' }, settings, categories).ok).toBe(false);
   });
 
   it('solo con crédito', () => {

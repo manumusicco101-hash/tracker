@@ -37,7 +37,7 @@ export function csvText(value: string): string {
 
 function detailFor(o: Occurrence): string {
   const parts: string[] = [];
-  if (o.installment) parts.push(`Cuota ${o.installment.number}/${o.installment.count}`);
+  if (o.installment) parts.push(o.installment.count === 1 ? '1 cuota' : `Cuota ${o.installment.number}/${o.installment.count}`);
   if (o.kind === 'recurring') parts.push('Recurrente');
   if (o.rateLabel && o.currency !== 'ARS') parts.push(`Cotización ${o.rateLabel}`);
   return parts.join(' · ');
