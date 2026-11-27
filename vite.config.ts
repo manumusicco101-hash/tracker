@@ -7,9 +7,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version: string };
 
+// Identificador del build: el commit en Vercel o, si no está, la fecha y hora del build.
+// Se muestra en Ajustes para saber qué versión tiene cargada el celular.
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? new Date().toISOString().slice(0, 16).replace('T', ' ');
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_BUILD__: JSON.stringify(buildId),
   },
   plugins: [
     react(),

@@ -76,7 +76,7 @@ export function SettingsScreen() {
 
       <p className="flex items-center justify-center gap-1.5 pt-2 text-xs text-zinc-400 dark:text-zinc-500">
         <Info className="size-3.5" aria-hidden />
-        Gastos v{__APP_VERSION__} · esquema de datos v{SCHEMA_VERSION}
+        Gastos v{__APP_VERSION__} ({__APP_BUILD__}) · esquema de datos v{SCHEMA_VERSION}
       </p>
     </div>
   );

@@ -107,8 +107,13 @@ export function BottomSheet({
         style={{
           bottom: keyboardInset,
           maxHeight: keyboardInset ? `calc(100dvh - ${keyboardInset}px - 1rem)` : undefined,
-          transform: visible ? `translateY(${dragY}px)` : 'translateY(105%)',
-          transition: dragStart.current ? 'none' : 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
+          // Un panel que queda montado (Quick Add) se esconde en su lugar, transparente, y no debajo
+          // de la pantalla: su campo recibe el foco en el mismo toque que lo abre, y si en ese instante
+          // estuviera fuera de la vista, iOS desplazaría la vista para mostrarlo y la dejaría corrida
+          // (la barra inferior subía al cerrar el panel).
+          transform: visible ? `translateY(${dragY}px)` : keepMounted ? 'translateY(1.5rem)' : 'translateY(105%)',
+          opacity: keepMounted && !visible ? 0 : 1,
+          transition: dragStart.current ? 'none' : 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease-out',
         }}
       >
         <div

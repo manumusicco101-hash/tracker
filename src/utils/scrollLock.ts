@@ -1,15 +1,19 @@
-// Bloqueo del scroll de la página mientras hay un panel abierto, pensado para iOS.
+// Bloqueo del scroll de la página mientras hay un panel abierto, y arreglos para iOS.
 //
 // En iOS no alcanza con `overflow: hidden` en el body: al enfocar un campo y abrirse el
-// teclado, Safari desplaza igual la página. Al cerrarse el teclado, la app instalada a veces
-// deja lo fijo (barra inferior, paneles) corrido hasta el próximo scroll.
+// teclado, Safari desplaza igual la página. Por eso, mientras dura el bloqueo el body queda
+// `position: fixed` en el mismo lugar y al soltarlo se vuelve a la posición guardada.
 //
-// Por eso, mientras dura el bloqueo el body queda `position: fixed` en el mismo lugar (no hay
-// nada que desplazar) y al soltarlo se vuelve a la posición guardada. Cuando el teclado terminó
-// de bajar, se mueve la página 1 px ida y vuelta para que iOS vuelva a ubicar lo fijo.
+// Además, la app instalada a veces deja la vista corrida respecto de lo fijo después de cerrar
+// el teclado (la barra inferior aparece más arriba y se ve contenido debajo). Eso se detecta
+// con visualViewport.offsetTop > 0 sin teclado ni zoom, y se corrige desplazando la página hasta
+// donde está la vista: el contenido no se mueve y lo fijo vuelve a su lugar.
 
 let locks = 0;
 let savedScrollY = 0;
+
+/** Con el teclado abierto, la ventana visible es al menos esto más baja que la ventana completa. */
+const KEYBOARD_MIN_HEIGHT = 80;
 
 /** Bloquea el scroll de la página. Devuelve la función que lo suelta (se puede llamar más de una vez). */
 export function lockPageScroll(): () => void {
@@ -43,7 +47,24 @@ export function lockPageScroll(): () => void {
   };
 }
 
-/** Espera a que baje el teclado (o 600 ms) y reacomoda la página para que lo fijo quede en su lugar. */
+function keyboardOpen(viewport: VisualViewport): boolean {
+  return window.innerHeight - viewport.height >= KEYBOARD_MIN_HEIGHT;
+}
+
+/**
+ * Lleva la página hasta donde está la vista y la mueve 1 px ida y vuelta: así iOS vuelve a
+ * ubicar lo fijo (barra inferior, paneles). No hace nada con zoom, con teclado o con un panel abierto.
+ */
+function realignViewport(): void {
+  const viewport = window.visualViewport;
+  if (locks > 0) return;
+  if (viewport && (Math.abs(viewport.scale - 1) > 0.01 || keyboardOpen(viewport))) return;
+  const target = Math.max(0, Math.round(window.scrollY + (viewport?.offsetTop ?? 0)));
+  window.scrollTo(0, target + 1);
+  requestAnimationFrame(() => window.scrollTo(0, target));
+}
+
+/** Espera a que baje el teclado (o 600 ms) y realinea la vista. Se repite un poco después por si iOS se reacomoda tarde. */
 function settleAfterKeyboard(): void {
   const viewport = window.visualViewport;
   let done = false;
@@ -54,17 +75,34 @@ function settleAfterKeyboard(): void {
     done = true;
     viewport?.removeEventListener('resize', onResize);
     window.clearTimeout(timer);
-    if (locks > 0) return; // Se abrió otro panel mientras tanto: no se toca nada.
-    const y = window.scrollY;
-    window.scrollTo(0, y + 1);
-    requestAnimationFrame(() => window.scrollTo(0, y));
+    realignViewport();
+    window.setTimeout(() => {
+      if (viewport && viewport.offsetTop > 1) realignViewport();
+    }, 400);
   };
 
   function onResize() {
-    // El teclado ya bajó cuando el área visible vuelve a ocupar casi toda la ventana.
-    if (viewport && window.innerHeight - viewport.height < 80) finish();
+    if (viewport && !keyboardOpen(viewport)) finish();
   }
 
   viewport?.addEventListener('resize', onResize);
   timer = window.setTimeout(finish, 600);
+}
+
+/**
+ * Red de seguridad para toda la app: si en algún momento la vista queda corrida sin teclado ni
+ * zoom (el bug de iOS), se realinea. Se instala una sola vez al arrancar.
+ */
+export function watchViewportDrift(): void {
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+  let timer = 0;
+  const check = () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      if (viewport.offsetTop > 1) realignViewport();
+    }, 150);
+  };
+  viewport.addEventListener('resize', check);
+  viewport.addEventListener('scroll', check);
 }
