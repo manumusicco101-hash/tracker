@@ -15,7 +15,7 @@ export function UpdatePrompt() {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[80] flex justify-center px-4" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+    <div className="vv-top fixed inset-x-0 top-0 z-[80] flex justify-center px-4" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
       <div className="flex w-full max-w-md animate-pop-in items-center gap-3 rounded-2xl bg-indigo-600 py-2 pr-2 pl-4 text-sm text-white shadow-lg">
         <RefreshCw className="size-4 shrink-0" aria-hidden />
         <p className="flex-1">Hay una versión nueva de la app.</p>

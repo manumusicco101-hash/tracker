@@ -5,6 +5,7 @@ import { DataSection } from '../components/settings/DataSection';
 import { QuickAddSection } from '../components/settings/QuickAddSection';
 import { RatesSection } from '../components/settings/RatesSection';
 import { SettingsCard } from '../components/settings/SettingsCard';
+import { setViewportDebug, useViewportDebug } from '../components/layout/ViewportDebug';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { SCHEMA_VERSION } from '../data/migrations';
 import { BASE_CURRENCIES, CURRENCY_NAMES } from '../lib/currency';
@@ -19,6 +20,7 @@ const THEME_ICONS: Record<ThemePreference, typeof Sun> = { system: Monitor, ligh
 export function SettingsScreen() {
   const { settings, persistent, actions } = useAppData();
   const toast = useToast();
+  const viewportDebug = useViewportDebug();
 
   const update = async (patch: Parameters<typeof actions.updateSettings>[0], message?: string) => {
     try {
@@ -78,6 +80,15 @@ export function SettingsScreen() {
         <Info className="size-3.5" aria-hidden />
         Gastos v{__APP_VERSION__} ({__APP_BUILD__}) · esquema de datos v{SCHEMA_VERSION}
       </p>
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={() => setViewportDebug(!viewportDebug)}
+          className="min-h-11 px-3 text-xs text-zinc-400 underline underline-offset-2 dark:text-zinc-500"
+        >
+          Diagnóstico de pantalla: {viewportDebug ? 'activado' : 'desactivado'}
+        </button>
+      </div>
     </div>
   );
 }

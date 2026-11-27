@@ -18,7 +18,7 @@ export function BottomNav({ current, onNavigate }: BottomNavProps) {
   return (
     <nav
       aria-label="Secciones"
-      className="skin-glass fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/80 dark:border-zinc-800"
+      className="skin-glass vv-bottom fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/80 dark:border-zinc-800"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="mx-auto grid h-16 max-w-2xl grid-cols-4">

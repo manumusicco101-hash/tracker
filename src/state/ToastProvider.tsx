@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-4"
+        className="vv-bottom pointer-events-none fixed inset-x-0 z-[70] flex justify-center px-4"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 6.5rem)' }}
         role="status"
         aria-live="polite"

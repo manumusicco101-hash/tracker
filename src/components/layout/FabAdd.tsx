@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 export function FabAdd({ onPress }: { onPress: () => void }) {
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 z-40 mx-auto flex max-w-2xl justify-end px-4"
+      className="vv-bottom pointer-events-none fixed inset-x-0 z-40 mx-auto flex max-w-2xl justify-end px-4"
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + 4.75rem)' }}
     >
       <button

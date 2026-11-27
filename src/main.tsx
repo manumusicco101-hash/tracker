@@ -4,10 +4,10 @@ import './index.css';
 import { AppDataProvider } from './state/AppDataProvider';
 import { ConfirmProvider } from './state/ConfirmProvider';
 import { ToastProvider } from './state/ToastProvider';
-import { watchViewportDrift } from './utils/scrollLock';
+import { trackVisualViewport } from './utils/visualViewport';
 
-// iOS a veces deja la vista corrida respecto de lo fijo al cerrar el teclado: se corrige solo.
-watchViewportDrift();
+// iOS 26 puede dejar la vista corrida respecto de lo fijo al cerrar el teclado: se compensa.
+trackVisualViewport();
 
 // Sin <StrictMode>: su doble montaje en desarrollo duplica las entradas de historial
 // que usan los paneles para que el botón "atrás" de Android los cierre.

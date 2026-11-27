@@ -3,6 +3,7 @@ import { ExpenseDetailSheet } from './components/expenses/ExpenseDetailSheet';
 import { BottomNav } from './components/layout/BottomNav';
 import { FabAdd } from './components/layout/FabAdd';
 import { UpdatePrompt } from './components/layout/UpdatePrompt';
+import { ViewportDebug } from './components/layout/ViewportDebug';
 import { QuickAddSheet, type QuickAddHandle } from './components/quick-add/QuickAddSheet';
 import { useHashRoute } from './hooks/useHashRoute';
 import { useQuotesSync } from './hooks/useQuotesSync';
@@ -74,6 +75,7 @@ export function App() {
       <ExpenseDetailSheet open={detailOpen} expenseId={detail?.expenseId ?? null} occurrence={detail?.occurrence} onClose={closeDetail} />
       <QuickAddSheet ref={quickAdd} />
       <UpdatePrompt />
+      <ViewportDebug />
     </UIContext.Provider>
   );
 }

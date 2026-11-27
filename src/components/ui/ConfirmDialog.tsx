@@ -37,7 +37,7 @@ export function ConfirmDialog({ open, options, onConfirm, onCancel }: ConfirmDia
   const danger = options.tone === 'danger';
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center p-4 sm:items-center" role="presentation">
+    <div className="vv-fill fixed inset-0 z-[60] flex items-end justify-center p-4 sm:items-center" role="presentation">
       <div className="absolute inset-0 animate-fade-in bg-zinc-950/50" onClick={onCancel} />
       <div
         role="alertdialog"

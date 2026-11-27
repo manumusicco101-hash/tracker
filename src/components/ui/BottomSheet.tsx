@@ -91,7 +91,7 @@ export function BottomSheet({
   const visible = open && (shown || keepMounted);
 
   return (
-    <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
+    <div className={`vv-fill fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
       <div
         className={`absolute inset-0 bg-zinc-950/40 backdrop-blur-[2px] transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
@@ -106,7 +106,8 @@ export function BottomSheet({
         className="absolute inset-x-0 mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl bg-white shadow-2xl outline-none dark:bg-zinc-900"
         style={{
           bottom: keyboardInset,
-          maxHeight: keyboardInset ? `calc(100dvh - ${keyboardInset}px - 1rem)` : undefined,
+          // Con el teclado abierto, el panel entra en lo visible (descontando si iOS corrió la vista).
+          maxHeight: keyboardInset ? `calc(100dvh - ${keyboardInset}px - var(--vv-top, 0px) - 1rem)` : undefined,
           // Un panel que queda montado (Quick Add) se esconde en su lugar, transparente, y no debajo
           // de la pantalla: su campo recibe el foco en el mismo toque que lo abre, y si en ese instante
           // estuviera fuera de la vista, iOS desplazaría la vista para mostrarlo y la dejaría corrida
